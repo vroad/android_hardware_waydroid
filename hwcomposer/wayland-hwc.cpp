@@ -527,30 +527,7 @@ ensure_pipe(struct display* display, int input_type)
     n++;
 
 static void
-keyboard_handle_keymap(void *, struct wl_keyboard *,
-               uint32_t, int fd, uint32_t)
-{
-    /* Just so we don’t leak the keymap fd */
-    close(fd);
-}
-
-static void
-keyboard_handle_enter(void *, struct wl_keyboard *,
-                      uint32_t, struct wl_surface *,
-                      struct wl_array *)
-{
-}
-
-static void
-keyboard_handle_leave(void *, struct wl_keyboard *,
-                      uint32_t, struct wl_surface *)
-{
-}
-
-static void
-keyboard_handle_key(void *data, struct wl_keyboard *,
-                    uint32_t, uint32_t, uint32_t key,
-                    uint32_t state)
+send_key_event(display *data, uint32_t key, wl_keyboard_key_state state)
 {
     struct display* display = (struct display*)data;
     struct input_event event[1];
@@ -569,6 +546,42 @@ keyboard_handle_key(void *data, struct wl_keyboard *,
     res = write(display->input_fd[INPUT_KEYBOARD], &event, sizeof(event));
     if (res < sizeof(event))
         ALOGE("Failed to write event for InputFlinger: %s", strerror(errno));
+    display->keysDown[(uint8_t)key] = state;
+}
+
+static void
+keyboard_handle_keymap(void *, struct wl_keyboard *,
+               uint32_t, int fd, uint32_t)
+{
+    /* Just so we don’t leak the keymap fd */
+    close(fd);
+}
+
+static void
+keyboard_handle_enter(void *, struct wl_keyboard *,
+                      uint32_t, struct wl_surface *,
+                      struct wl_array *)
+{
+}
+
+static void
+keyboard_handle_leave(void *data, struct wl_keyboard *,
+                      uint32_t, struct wl_surface *)
+{
+    struct display *display = (struct display *)data;
+    for (size_t i = 0; i < display->keysDown.size(); i++) {
+        if (display->keysDown[i] == WL_KEYBOARD_KEY_STATE_PRESSED) {
+            send_key_event(display, i, WL_KEYBOARD_KEY_STATE_RELEASED);
+        }
+    }
+}
+
+static void
+keyboard_handle_key(void *data, struct wl_keyboard *,
+                    uint32_t, uint32_t, uint32_t key,
+                    uint32_t state)
+{
+    send_key_event((struct display*)data, key, (enum wl_keyboard_key_state)state);
 }
 
 static void
