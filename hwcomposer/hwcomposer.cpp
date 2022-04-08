@@ -307,7 +307,7 @@ feedback_sync_output(void *, struct wp_presentation_feedback *,
 
 static void
 feedback_presented(void *data,
-           struct wp_presentation_feedback *,
+           struct wp_presentation_feedback *feedback,
            uint32_t tv_sec_hi,
            uint32_t tv_sec_lo,
            uint32_t tv_nsec,
@@ -321,11 +321,13 @@ feedback_presented(void *data,
     pthread_mutex_lock(&pdev->vsync_lock);
     pdev->last_vsync_ns = (((uint64_t)tv_sec_hi << 32) + tv_sec_lo) * 1e9 + tv_nsec;
     pthread_mutex_unlock(&pdev->vsync_lock);
+    wp_presentation_feedback_destroy(feedback);
 }
 
 static void
-feedback_discarded(void *, struct wp_presentation_feedback *)
+feedback_discarded(void *, struct wp_presentation_feedback *feedback)
 {
+    wp_presentation_feedback_destroy(feedback);
 }
 
 static const struct wp_presentation_feedback_listener feedback_listener = {
