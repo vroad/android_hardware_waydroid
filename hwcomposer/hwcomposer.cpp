@@ -317,6 +317,7 @@ feedback_presented(void *data,
            uint32_t)
 {
     struct waydroid_hwc_composer_device_1* pdev = (struct waydroid_hwc_composer_device_1*)data;
+    wp_presentation_feedback_destroy(feedback);
 
     pthread_mutex_lock(&pdev->vsync_lock);
     pdev->last_vsync_ns = (((uint64_t)tv_sec_hi << 32) + tv_sec_lo) * 1e9 + tv_nsec;
